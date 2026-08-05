@@ -1,41 +1,71 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { validateFeedback } from "@/lib/validation";
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json();
+    const body = await request.json();
 
-    const { kesan, pesan } = body;
+    const { kesan, pesan } = body
+    
+    const kesanError = validateFeedback(kesan, "Kesan");
 
-    if (!kesan || !pesan) {
-      return NextResponse.json(
-        { message: "Semua field wajib diisi." },
-        { status: 400 }
-      );
+if (kesanError) {
+  return NextResponse.json(
+    {
+      success: false,
+      message: kesanError,
+    },
+    {
+      status: 400,
     }
+  );
+}
 
-    const { error } = await supabase
+const pesanError = validateFeedback(pesan, "Pesan");
+
+if (pesanError) {
+  return NextResponse.json(
+    {
+      success: false,
+      message: pesanError,
+    },
+    {
+      status: 400,
+    }
+  );
+}
+
+    const { data, error } = await supabase
       .from("tbl_tr_feedback")
       .insert({
         kesan,
-        pesan
-      });
+        pesan,
+      })
+      .select();
+
+    console.log("Data:", data);
+    console.log("Supabase Error:", error);
 
     if (error) {
-      return NextResponse.json(
-        { message: error.message },
-        { status: 500 }
-      );
+      throw error;
     }
 
     return NextResponse.json({
-      success: true
+      success: true,
+      data,
     });
+  } catch (error) {
+    console.error("API Error:", error);
 
-  } catch (err) {
     return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 }
+      {
+        success: false,
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }

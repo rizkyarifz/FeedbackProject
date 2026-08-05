@@ -34,8 +34,9 @@ export default function Home() {
       setKesan("");
       setPesan("");
     } else {
-      const err = await response.json();
-      alert(err.message);
+      const text = await response.text();
+console.log(text);
+alert(text);
     }
   }
 
